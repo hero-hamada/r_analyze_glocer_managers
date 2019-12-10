@@ -1,0 +1,135 @@
+---
+title: "Разработка рекомендаций для улучшения эффективности ведения бизнеса продуктовых магазинов"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r include=FALSE}
+library(readxl) #load lib
+library(knitr)
+library(dplyr)
+```
+
+  
+
+```{r include=FALSE}
+
+df <- read_excel("D:/джава/alfa/Задания excel.xlsx",2)
+```
+
+  В Базе данных показаны **6 менеджеров** : `r unique(df$Менеджер)`, которые работают в **`r length(unique(df$Магазин))` магазинах**: `r unique(df$Магазин)`.
+
+  **Продукты магазина:** `r unique(df$Товар)`. 
+  
+  А также можно увидеть кол-во, сумма и месяц продажи.
+
+```{r echo=FALSE }
+kable(head(df), format = "markdown")
+
+#1
+```
+
+#### **1. Найти менеджера продающий больше остальных:**
+        а) По сумме
+        б) По колличеству
+
+
+```{r echo = FALSE}
+
+managers <- unique(df$Менеджер)
+
+summ = array()
+
+for (i in 1:length(managers)){
+  summ[i] = sum(subset(df, df$`Менеджер` == managers[i])$`Сумма`)
+}
+
+countt = array()
+
+for (i in 1:length(managers)){
+  countt[i] = sum(subset(df, df$Менеджер == managers[i])['Кол-во'])
+}
+
+table <- array(c(managers, summ, countt), dim = c(5, 3, 1),
+               dimnames = list(c(1:5),c("Managers", "Sum of sum", "Sum of count")))
+
+kable(table, format = "markdown")
+
+```
+
+#### **2. Построить таблицу в которой будет отображаться выручка по продуктам во всех магазинах и выручка с магазинов по всем продуктам**
+
+
+
+```{r echo=FALSE}
+
+shops <- unique(df$Магазин)
+
+products <- unique(df$Товар)
+
+table1 <- array( dim = c(length(shops) + 1,length(products) + 2, 1))
+table1 <- data.frame(table1)
+
+table1[,1] <- c(shops,"Итого")
+
+for (i in 1:length(shops)){
+  for (j in 1:length(products)){
+  
+    t <- subset(df, df$Магазин == shops[i])
+    
+    table1[i, (j + 1)] <- sum(subset(t, t$Товар == products[j])$Сумма)
+   
+  }
+}
+
+table1[is.na(table1)] <- 0
+
+colnames(table1) <- c("Магазины/Продукты",products,"Итого")
+
+table1[12,c(2:11)] <-colSums(table1[,-1])
+table1[, 11] <- rowSums(table1[,-1])
+
+kable(table1, format = "markdown")
+
+```
+
+#### **3. Построить динамический график продаж по всем продуктам, выявить влияние времени года на продажу товара**
+
+
+
+```{r echo=FALSE}
+#3
+
+months <- unique(df$`Месяц продажи`)
+
+table2 <- array( dim = c(length(months) + 1,length(products) + 2, 1))
+table2 <- data.frame(table2)
+
+table2[,1] <- c(months,"Итого")
+
+for (i in 1:length(months)){
+  for (j in 1:length(products)){
+    
+    t <- subset(df, df$`Месяц продажи` == months[i])
+    
+    table2[i, (j + 1)] <- sum(subset(t, t$Товар == products[j])$Сумма)
+    
+  }
+}
+
+table2[is.na(table2)] <- 0
+
+colnames(table2) <- c("Месяцы/Продукты",products,"Итого")
+
+table2[13,c(2:11)] <-colSums(table2[,-1])
+table2[, 11] <- rowSums(table2[,-1])
+
+library(ggplot2)
+
+kable(table2, format = "markdown")
+
+```
